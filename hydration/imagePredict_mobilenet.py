@@ -1,37 +1,10 @@
-import sys
-import os
-import time
-from datetime import datetime
-
 # ======================================================
-# DEPENDENCY HANDLING
+# DEPENDENCY HANDLING (Lazy Loading for Memory Optimization)
 # ======================================================
-try:
-    import torch
-    import torch.nn as nn
-    import torch.nn.functional as F
-    from torchvision import models
-    from PIL import Image, ImageDraw, ImageFont, ImageStat
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import cv2
-    from captum.attr import LayerGradCam
-except ImportError as e:
-    print(f"[CRITICAL ERROR] Missing Dependency: {e}")
-
 from core.config import DEVICE, MOBILENET_MODEL_OUT
-from hydration.training.preprocess_images import get_transforms
 
-# Import new advanced feature extraction
-try:
-    from hydration.lip_feature_extractor import (
-        extract_all_features,
-        calculate_image_quality_score
-    )
-    ADVANCED_FEATURES_AVAILABLE = True
-except ImportError as e:
-    print(f"[Warning] Advanced features not available: {e}")
-    ADVANCED_FEATURES_AVAILABLE = False
+# Constants
+ADVANCED_FEATURES_AVAILABLE = False # Will check inside functions
 
 
 # ======================================================
@@ -44,6 +17,7 @@ def check_image_quality(image):
     
     🔥 VERY LENIENT: Only reject extremely poor quality images
     """
+    from PIL import ImageStat
     grayscale = image.convert("L")
     stat = ImageStat.Stat(grayscale)
     
@@ -118,72 +92,78 @@ def check_content_relevance(image):
 # ======================================================
 # LOAD TRAINED MOBILENETV2 MODEL (SUPPORT BOTH ARCHITECTURES)
 # ======================================================
-class SimpleLipModel(nn.Module):
-    """MobileNetV2 with default classifier (single Linear 1280 -> num_classes). Used by older checkpoints."""
-    def __init__(self, num_classes=2):
-        super().__init__()
-        self.mobilenet = models.mobilenet_v2(pretrained=False)
-        num_ftrs = self.mobilenet.classifier[1].in_features
-        self.mobilenet.classifier = nn.Sequential(
-            nn.Dropout(0.2),
-            nn.Linear(num_ftrs, num_classes)
-        )
+class SimpleLipModel(None): # Default base
+    pass
 
-    def forward(self, x):
-        return self.mobilenet(x)
+def define_models():
+    """Defines model classes inside a function to avoid global torch dependency"""
+    global SimpleLipModel, ImprovedLipModel, ExpertLipModel
+    import torch.nn as nn
+    from torchvision import models
 
+    class SimpleLipModel(nn.Module):
+        def __init__(self, num_classes=2):
+            super().__init__()
+            self.mobilenet = models.mobilenet_v2(pretrained=False)
+            num_ftrs = self.mobilenet.classifier[1].in_features
+            self.mobilenet.classifier = nn.Sequential(
+                nn.Dropout(0.2),
+                nn.Linear(num_ftrs, num_classes)
+            )
+        def forward(self, x):
+            return self.mobilenet(x)
 
-class ImprovedLipModel(nn.Module):
-    """Enhanced MobileNetV2 with 3-layer classifier. Used by train_lip_model_complete.py."""
-    def __init__(self, num_classes=2):
-        super().__init__()
-        self.mobilenet = models.mobilenet_v2(pretrained=False)
-        num_ftrs = self.mobilenet.classifier[1].in_features
-        self.mobilenet.classifier = nn.Sequential(
-            nn.Dropout(0.3),
-            nn.Linear(num_ftrs, 512),
-            nn.ReLU(),
-            nn.BatchNorm1d(512),
-            nn.Dropout(0.4),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.BatchNorm1d(256),
-            nn.Dropout(0.3),
-            nn.Linear(256, num_classes)
-        )
+    class ImprovedLipModel(nn.Module):
+        def __init__(self, num_classes=2):
+            super().__init__()
+            self.mobilenet = models.mobilenet_v2(pretrained=False)
+            num_ftrs = self.mobilenet.classifier[1].in_features
+            self.mobilenet.classifier = nn.Sequential(
+                nn.Dropout(0.3),
+                nn.Linear(num_ftrs, 512),
+                nn.ReLU(),
+                nn.BatchNorm1d(512),
+                nn.Dropout(0.4),
+                nn.Linear(512, 256),
+                nn.ReLU(),
+                nn.BatchNorm1d(256),
+                nn.Dropout(0.3),
+                nn.Linear(256, num_classes)
+            )
+        def forward(self, x):
+            return self.mobilenet(x)
 
-    def forward(self, x):
-        return self.mobilenet(x)
-
-
-class ExpertLipModel(nn.Module):
-    """Expert MobileNetV2 with 4-layer classifier. Used by RETRAIN_MODELS_FAST.py."""
-    def __init__(self, num_classes=2):
-        super().__init__()
-        self.mobilenet = models.mobilenet_v2(pretrained=False)
-        num_ftrs = self.mobilenet.classifier[1].in_features
-        self.mobilenet.classifier = nn.Sequential(
-            nn.Dropout(0.3),
-            nn.Linear(num_ftrs, 512),
-            nn.ReLU(),
-            nn.BatchNorm1d(512),
-            nn.Dropout(0.4),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.BatchNorm1d(256),
-            nn.Dropout(0.3),
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.BatchNorm1d(128),
-            nn.Dropout(0.2),
-            nn.Linear(128, num_classes)
-        )
-
-    def forward(self, x):
-        return self.mobilenet(x)
-
+    class ExpertLipModel(nn.Module):
+        def __init__(self, num_classes=2):
+            super().__init__()
+            self.mobilenet = models.mobilenet_v2(pretrained=False)
+            num_ftrs = self.mobilenet.classifier[1].in_features
+            self.mobilenet.classifier = nn.Sequential(
+                nn.Dropout(0.3),
+                nn.Linear(num_ftrs, 512),
+                nn.ReLU(),
+                nn.BatchNorm1d(512),
+                nn.Dropout(0.4),
+                nn.Linear(512, 256),
+                nn.ReLU(),
+                nn.BatchNorm1d(256),
+                nn.Dropout(0.3),
+                nn.Linear(256, 128),
+                nn.ReLU(),
+                nn.BatchNorm1d(128),
+                nn.Dropout(0.2),
+                nn.Linear(128, num_classes)
+            )
+        def forward(self, x):
+            return self.mobilenet(x)
 
 def load_model(class_names):
+    import os
+    import torch
+    from PIL import Image
+    
+    # Ensure models are defined
+    define_models()
     """
     Load the trained MobileNetV2 model for lip hydration prediction.
     Supports SimpleLipModel, ImprovedLipModel (3-layer), and ExpertLipModel (4-layer).
@@ -334,6 +314,7 @@ def calculate_hydration_score(label, confidence):
 # UI OVERLAY
 # ======================================================
 def draw_overlay(image, score, status, warnings=[]):
+    from PIL import Image, ImageDraw, ImageFont
     image = image.convert("RGBA")
     overlay = Image.new("RGBA", image.size, (255, 255, 255, 0))
     draw = ImageDraw.Draw(overlay)
@@ -380,13 +361,18 @@ def generate_gradcam_heatmap(model, input_tensor, target_class, original_image):
     Generates a Grad-CAM heatmap overlay and a textual explanation.
     Returns (heatmap_pil, explanation_text)
     """
+    import numpy as np
+    import cv2
+    from PIL import Image
+    try:
+        from captum.attr import LayerGradCam
+    except ImportError:
+        return None, "XAI Library (Captum) not available."
+
     try:
         # Target the last conv layer of MobileNetV2
         target_layer = model.mobilenet.features[18]
         
-        if 'LayerGradCam' not in globals():
-             return None, "XAI Library (Captum) not available."
-
         lgc = LayerGradCam(model, target_layer)
         
         # Attribute
@@ -449,6 +435,13 @@ def generate_gradcam_heatmap(model, input_tensor, target_class, original_image):
 # IMAGE PREDICTION (ENHANCED WITH ADVANCED FEATURES)
 # ======================================================
 def predict_image(image_path, model, class_names):
+    import torch
+    import torch.nn.functional as F
+    from PIL import Image
+    import os
+    from datetime import datetime
+    from hydration.training.preprocess_images import get_transforms
+    
     transform = get_transforms(train=False)
     
     try:

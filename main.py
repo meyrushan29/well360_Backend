@@ -72,8 +72,8 @@ def api_status():
         "modules": ["Hydration", "Fitness", "MentalHealth"]
     }
 
-# Root endpoint for health checks (prevents 404 on /)
-@app.get("/")
+# Root endpoint for health checks (prevents 404/405 on /)
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {
         "message": "Well360 Backend is Live",
