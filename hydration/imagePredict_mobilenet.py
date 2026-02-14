@@ -452,7 +452,16 @@ def predict_image(image_path, model, class_names):
     transform = get_transforms(train=False)
     
     try:
-        image = Image.open(image_path).convert("RGB")
+        # MEMORY OPTIMIZATION: Open and immediately resize to a manageable size
+        # This prevents large 10MB+ images from hogging RAM during processing
+        with Image.open(image_path) as img_raw:
+             # Resize to max 800px on longest side for processing
+             MAX_PROCESS_SIZE = 800
+             w, h = img_raw.size
+             if max(w, h) > MAX_PROCESS_SIZE:
+                 scale = MAX_PROCESS_SIZE / max(w, h)
+                 img_raw = img_raw.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+             image = img_raw.convert("RGB")
     except Exception as e:
         print(f"[Error] Could not open image: {e}")
         return None
@@ -460,7 +469,8 @@ def predict_image(image_path, model, class_names):
     warnings = []
     advanced_info = {}
     
-    # ========== ADVANCED FEATURE EXTRACTION ==========
+    # ========== ADVANCED FEATURE EXTRACTION (MEDIAPIPE) ==========
+    # Track RAM usage: Mediapipe can cause OOM on Render Free (512MB)
     if ADVANCED_FEATURES_AVAILABLE:
         try:
             print("[INFO] Running advanced feature extraction...")
@@ -500,18 +510,19 @@ def predict_image(image_path, model, class_names):
             print(f"[INFO] Crack Severity: {features.get('crack_severity_score', 0):.1f}")
             
         except Exception as e:
-            print(f"[Warning] Advanced features failed: {e}")
+            print(f"[Warning] Advanced features (Mediapipe) failed or OOM prevented: {e}")
             image_for_prediction = image
+            warnings.append("Advanced analysis skipped (memory saver)")
     else:
         image_for_prediction = image
     
-    # 1. Quality Check (Original)
+    # 1. Quality Check
     is_good, reason = check_image_quality(image)
     if not is_good:
         print(f"[Warning] Image Quality Issue: {reason}")
         warnings.append(reason)
 
-    # 2. Content Relevance Check (Skin Filter)
+    # 2. Content Relevance Check
     is_relevant, relevance_reason = check_content_relevance(image_for_prediction)
     if not is_relevant:
         print(f"[REJECTING] {relevance_reason}")
@@ -529,7 +540,8 @@ def predict_image(image_path, model, class_names):
         
         return status_display, 0, 0.0, get_recommendation("REJECTED", 0), out_path, None, "Image rejected due to quality issues", advanced_info
 
-    # 3. Inference (Only if relevant)
+    # 3. Inference
+    print("[INFO] Running PyTorch Inference...")
     tensor = transform(image_for_prediction).unsqueeze(0).to(DEVICE)
     with torch.no_grad():
         outputs = model(tensor)
@@ -538,15 +550,11 @@ def predict_image(image_path, model, class_names):
     p_dehydrate = probs[0][0].item()
     p_normal = probs[0][1].item()
     
-    # ========== ENHANCED DECISION LOGIC ==========
-    # Combine ML prediction with advanced features
-    
-    # 🔥 IMPROVED THRESHOLDS (Based on ML Best Practices)
+    # Determine final label based on thresholds
     DEHYDRATION_THRESHOLD = 0.45  # More balanced decision boundary
     UNCERTAINTY_THRESHOLD = 0.55   # Only mark truly ambiguous cases as uncertain
     
     # Adjust prediction based on advanced features (if available)
-    adjustment_made = False
     if ADVANCED_FEATURES_AVAILABLE and 'crack_severity' in advanced_info:
         crack_severity = advanced_info['crack_severity']
         
@@ -554,7 +562,6 @@ def predict_image(image_path, model, class_names):
         if crack_severity > 30:
             print(f"[INFO] High crack severity ({crack_severity:.1f}) detected - adjusting prediction")
             
-            # 🔥 FIX: Proper probability renormalization
             boost_factor = 0.15
             p_dehydrate += boost_factor
             
@@ -564,10 +571,8 @@ def predict_image(image_path, model, class_names):
                 p_dehydrate = p_dehydrate / total_prob
                 p_normal = p_normal / total_prob
             
-            adjustment_made = True
             print(f"[INFO] Adjusted probabilities - Dehydrate: {p_dehydrate:.2%}, Normal: {p_normal:.2%}")
 
-    # Determine final label based on thresholds
     if p_dehydrate > DEHYDRATION_THRESHOLD:
         label = "Dehydrate"
         confidence = p_dehydrate
@@ -575,7 +580,6 @@ def predict_image(image_path, model, class_names):
         label = "Normal"
         confidence = p_normal
 
-    # Only mark as uncertain if truly ambiguous
     if confidence < UNCERTAINTY_THRESHOLD:
         status_display = "Uncertain"
         warnings.append(f"Low Confidence ({confidence:.0%})")
@@ -586,38 +590,45 @@ def predict_image(image_path, model, class_names):
 
     score = calculate_hydration_score(label, confidence)
     
-    # 🔥 XAI: Generate Heatmap & Explanation
-    heatmap_pil, xai_desc = generate_gradcam_heatmap(model, tensor, class_names.index(label), image_for_prediction)
+    # 4. Grad-CAM Visualization (XAI)
+    # Memory Guard: XAI uses extra RAM. Only run if we have some margin.
+    heatmap_pil = None
+    xai_desc = "Reasoning visualization skipped to save memory."
     
-    # Enhance XAI description with advanced features
-    if ADVANCED_FEATURES_AVAILABLE and advanced_info:
-        xai_additions = []
-        if advanced_info.get('crack_severity', 0) > 20:
-            xai_additions.append(f"Surface texture analysis detected signs of dryness (severity: {advanced_info['crack_severity']:.0f}/100).")
-        if advanced_info.get('color_redness', 0) > 0.1:
-            xai_additions.append("Color analysis shows increased redness typical of dehydration.")
+    try:
+        print("[INFO] Generating XAI Heatmap...")
+        heatmap_pil, xai_desc = generate_gradcam_heatmap(model, tensor, class_names.index(label), image_for_prediction)
         
-        if xai_additions:
-            xai_desc = xai_desc + " " + " ".join(xai_additions)
+        # Enhance XAI description with advanced features
+        if ADVANCED_FEATURES_AVAILABLE and advanced_info:
+            xai_additions = []
+            if advanced_info.get('crack_severity', 0) > 20:
+                xai_additions.append(f"Surface texture analysis detected signs of dryness.")
+            if advanced_info.get('color_redness', 0) > 0.1:
+                xai_additions.append("Color analysis shows increased redness.")
+            if xai_additions:
+                xai_desc = xai_desc + " " + " ".join(xai_additions)
+    except Exception as e:
+        print(f"[Warning] XAI failed: {e}")
     
     final_image = draw_overlay(image, score, status_display, warnings)
     
     os.makedirs("img/uploads", exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Save standard result
     out_path = f"img/uploads/result_{ts}.png"
     final_image.save(out_path)
     
-    # Save heatmap version
-    xai_path = f"img/uploads/xai_heatmap_{ts}.png"
+    xai_path = f"img/uploads/xai_heatmap_{ts}.png" if heatmap_pil else None
     if heatmap_pil:
         heatmap_pil.save(xai_path)
-    else:
-        xai_path = None
+    
+    # CRITICAL: Clean up tensors to free memory
+    del tensor
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     return status_display, score, confidence, get_recommendation(status_display, confidence), out_path, xai_path, xai_desc, advanced_info
-
 
 
 # ======================================================
@@ -628,24 +639,31 @@ GLOBAL_CLASSES = ["Dehydrate", "Normal"]
 
 def predict_single(image_path):
     global GLOBAL_MODEL
+    print(f"DEBUG: Entering predict_single for {image_path}")
     if GLOBAL_MODEL is None:
         try:
+            print("DEBUG: Loading GLOBAL_MODEL...")
             GLOBAL_MODEL = load_model(GLOBAL_CLASSES)
         except Exception as e:
+            print(f"DEBUG: Model Load Error: {e}")
             return {"error": f"Model load failed: {str(e)}", "confidence": 0, "hydration_score": 0, "prediction": "Error"}
 
+    print("DEBUG: Model loaded, proceeding to predict_image...")
     result = predict_image(image_path, GLOBAL_MODEL, GLOBAL_CLASSES)
     
     # Handle both old and new return formats
+    if result is None:
+         return {"error": "Prediction pipeline returned None", "prediction": "Error"}
+         
     if len(result) == 8:
         label, score, conf, rec, saved_path, xai_path, xai_desc, advanced_info = result
     else:
-        # Fallback for old format
         label, score, conf, rec, saved_path = result[:5]
         xai_path = result[5] if len(result) > 5 else None
         xai_desc = result[6] if len(result) > 6 else "No description"
         advanced_info = {}
     
+    print(f"DEBUG: Prediction successful: {label}")
     return {
         "prediction": label,
         "hydration_score": score,
@@ -654,10 +672,5 @@ def predict_single(image_path):
         "xai_heatmap_path": xai_path,
         "xai_description": xai_desc,
         "recommendation": rec,
-        "advanced_analysis": {
-            "quality_score": advanced_info.get('quality_score', None),
-            "lip_detected": advanced_info.get('lip_detected', None),
-            "crack_severity": advanced_info.get('crack_severity', None),
-            "texture_roughness": advanced_info.get('texture_roughness', None)
-        }
+        "advanced_analysis": advanced_info
     }
