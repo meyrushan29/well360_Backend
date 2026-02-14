@@ -97,6 +97,12 @@ SimpleLipModel = None
 ImprovedLipModel = None
 ExpertLipModel = None
 
+try:
+    from hydration.lip_feature_extractor import extract_all_features, calculate_image_quality_score
+    ADVANCED_FEATURES_AVAILABLE = True
+except (ImportError, Exception):
+    ADVANCED_FEATURES_AVAILABLE = False
+
 def define_models():
     """Defines model classes inside a function to avoid global torch dependency"""
     global SimpleLipModel, ImprovedLipModel, ExpertLipModel
