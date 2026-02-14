@@ -35,11 +35,26 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# === DEBUG: GLOBAL REQUEST LOGGING ===
+import time
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    print(f"\n[REQUEST] {request.method} {request.url}")
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        print(f"[RESPONSE] {request.method} {request.url} -> {response.status_code} ({process_time:.2f}s)")
+        return response
+    except Exception as e:
+        print(f"[ERROR] Request Failed: {e}")
+        raise e
 
 # =====================================================
 # ROUTER REGISTRATION
