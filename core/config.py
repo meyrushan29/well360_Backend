@@ -176,10 +176,21 @@ HYDRATION_RISK_CATEGORIES = [
     "High"
 ]
 
-# ======================================================
 # CNN IMAGE MODEL (LIP ANALYSIS – ISOLATED)
 # ======================================================
-MOBILENET_MODEL_OUT = MODEL_DIR / "LipModel_MobileNetV2.pth"
+# Robust Model Path Resolution (fixes missing file issues)
+_mobilenet_candidates = [
+    MODEL_DIR / "LipModel_MobileNetV2.pth",         # Expected: hydration/models/
+    BASE_DIR.parent / "LipModel_MobileNetV2.pth",   # Root: Well360-Backend/
+    BASE_DIR / "LipModel_MobileNetV2.pth",          # Core: Well360-Backend/core/
+]
+MOBILENET_MODEL_OUT = _mobilenet_candidates[0] # Default
+for path in _mobilenet_candidates:
+    if path.exists():
+        MOBILENET_MODEL_OUT = path
+        break
+
+print(f"CONFIG: Resolved MobileNet Model Path to: {MOBILENET_MODEL_OUT} (Exists: {MOBILENET_MODEL_OUT.exists()})")
 RESNET_MODEL_OUT = MODEL_DIR / "LipModel_ResNet18.pth"
 
 BATCH_SIZE = 8
