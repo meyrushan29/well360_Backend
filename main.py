@@ -69,7 +69,4 @@ app.mount("/uploads", StaticFiles(directory="img/uploads"), name="uploads")
 os.makedirs("img/fitness_processed", exist_ok=True)
 app.mount("/fitness_videos", StaticFiles(directory="img/fitness_processed"), name="fitness_videos")
 
-# Mount the 'static' directory (Flutter Web Build)
-# Note: This should be last to avoid masking API routes if 'static' has index.html
-if os.path.exists("static"):
-    app.mount("/", StaticFiles(directory="static", html=True), name="static")
+
