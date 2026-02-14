@@ -188,24 +188,46 @@ def predict_lip(
     db: Session = Depends(get_db)
 ):
     try:
+        import traceback
+        print("DEBUG: [START] Lip Prediction Request")
+        
+        # 1. Model Check
+        from core.config import MOBILENET_MODEL_OUT
+        print(f"DEBUG: Model path expected: {MOBILENET_MODEL_OUT}")
+        if not os.path.exists(MOBILENET_MODEL_OUT):
+             print(f"DEBUG: [CRITICAL] Model file NOT found at {MOBILENET_MODEL_OUT}")
+             # check dir contents to help debug
+             d = os.path.dirname(MOBILENET_MODEL_OUT)
+             if os.path.exists(d):
+                 print(f"DEBUG: Dir {d} contents: {os.listdir(d)}")
+
+        # 2. Import
         from hydration.imagePredict_mobilenet import predict_single
+        print("DEBUG: Imported predict_single successfully")
 
         os.makedirs("temp", exist_ok=True)
         temp_filename = f"temp/{uuid.uuid4()}.png"
         
         img_str = data.image_base64
+        # print(f"DEBUG: Image string length: {len(img_str)}")
+        
         if "," in img_str:
             img_str = img_str.split(",")[1]
             
         with open(temp_filename, "wb") as f:
             f.write(base64.b64decode(img_str))
+        print(f"DEBUG: Saved temp image: {temp_filename}")
             
+        print("DEBUG: Calling predict_single...")
         result = predict_single(temp_filename)
+        print("DEBUG: predict_single finished")
 
         if "error" in result:
+             print(f"DEBUG: ML Prediction Error: {result['error']}")
              raise HTTPException(status_code=400, detail=result["error"])
         
-        # === STORAGE UPDATE: Upload to Firebase if configured ===
+        # 3. Storage
+        print("DEBUG: Initializing Storage Upload...")
         from core.storage import storage_manager
 
         # Original Hydration Lip Image
@@ -215,6 +237,8 @@ def predict_lip(
             local_url_prefix="/uploads",
             content_type="image/png"
         )
+        print(f"DEBUG: Main Image URL: {firebase_url}")
+
         # Heatmap (XAI) Image
         firebase_xai_url = storage_manager.upload_file(
             result["xai_heatmap_path"], 
@@ -222,6 +246,9 @@ def predict_lip(
             local_url_prefix="/uploads",
             content_type="image/png"
         ) if result.get("xai_heatmap_path") else None
+        
+        if result.get("xai_heatmap_path"):
+            print(f"DEBUG: XAI Image URL: {firebase_xai_url}")
 
         # Update Result Object (Used by Frontend)
         if firebase_url:
@@ -229,16 +256,18 @@ def predict_lip(
         if firebase_xai_url:
             result["xai_url"] = firebase_xai_url
 
-        # Save to Database with new URL
+        # 4. Database
+        print("DEBUG: Saving to Database...")
         db_entry = LipAnalysis(
             user_id=current_user.id,
-            image_path=firebase_url or result["saved_image_path"], # Store full URL/path
+            image_path=firebase_url or result["saved_image_path"], 
             prediction=result["prediction"],
             hydration_score=result["hydration_score"],
             confidence=result["confidence"]
         )
         db.add(db_entry)
         db.commit()
+        print("DEBUG: Saved to DB")
 
         # Fetch personalized suggestions from database
         prediction_context = {
@@ -249,11 +278,13 @@ def predict_lip(
         personalized_suggestions = fetch_personalized_suggestions(db, "lip", prediction_context)
         result["personalized_suggestions"] = personalized_suggestions
 
+        print("DEBUG: Success, returning result")
         return result
         
     except Exception as e:
-        print(f"LIP PREDICT ERROR: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"LIP PREDICT ERROR (CRITICAL): {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
     finally:
         if 'temp_filename' in locals() and os.path.exists(temp_filename):
             os.remove(temp_filename)
