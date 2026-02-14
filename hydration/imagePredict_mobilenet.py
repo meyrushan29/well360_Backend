@@ -92,8 +92,10 @@ def check_content_relevance(image):
 # ======================================================
 # LOAD TRAINED MOBILENETV2 MODEL (SUPPORT BOTH ARCHITECTURES)
 # ======================================================
-class SimpleLipModel(None): # Default base
-    pass
+# Model class placeholders (defined globally inside define_models() to avoid early torch dependency)
+SimpleLipModel = None
+ImprovedLipModel = None
+ExpertLipModel = None
 
 def define_models():
     """Defines model classes inside a function to avoid global torch dependency"""
