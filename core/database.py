@@ -12,6 +12,10 @@ _db_dir.mkdir(parents=True, exist_ok=True)
 # Priority: Environment Variable (e.g. Render/Railway Postgres) -> Local SQLite
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{(_db_dir / 'hydration_app.db').as_posix()}")
 
+# Fix for Render/Heroku providing "postgres://" instead of "postgresql://"
+if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # Prepare engine args (Postgres doesn't support check_same_thread)
 connect_args = {}
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):

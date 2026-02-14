@@ -23,6 +23,7 @@ matplotlib
 python-jose[cryptography]
 passlib[bcrypt]
 pydantic
+psycopg2-binary
 gunicorn
 opencv-python-headless
 
