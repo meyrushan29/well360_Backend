@@ -205,20 +205,40 @@ def predict_lip(
         if "error" in result:
              raise HTTPException(status_code=400, detail=result["error"])
         
+        # === STORAGE UPDATE: Upload to Firebase if configured ===
+        from core.storage import storage_manager
+
+        # Original Hydration Lip Image
+        firebase_url = storage_manager.upload_file(
+            result["saved_image_path"], 
+            remote_folder="hydration_images",
+            local_url_prefix="/uploads",
+            content_type="image/png"
+        )
+        # Heatmap (XAI) Image
+        firebase_xai_url = storage_manager.upload_file(
+            result["xai_heatmap_path"], 
+            remote_folder="hydration_images",
+            local_url_prefix="/uploads",
+            content_type="image/png"
+        ) if result.get("xai_heatmap_path") else None
+
+        # Update Result Object (Used by Frontend)
+        if firebase_url:
+            result["image_url"] = firebase_url
+        if firebase_xai_url:
+            result["xai_url"] = firebase_xai_url
+
+        # Save to Database with new URL
         db_entry = LipAnalysis(
             user_id=current_user.id,
-            image_path=result["saved_image_path"],
+            image_path=firebase_url or result["saved_image_path"], # Store full URL/path
             prediction=result["prediction"],
             hydration_score=result["hydration_score"],
             confidence=result["confidence"]
         )
         db.add(db_entry)
         db.commit()
-        
-        if result.get("saved_image_path"):
-            result["image_url"] = f"/uploads/{os.path.basename(result['saved_image_path'])}"
-        if result.get("xai_heatmap_path"):
-            result["xai_url"] = f"/uploads/{os.path.basename(result['xai_heatmap_path'])}"
 
         # Fetch personalized suggestions from database
         prediction_context = {
@@ -227,7 +247,7 @@ def predict_lip(
         }
         
         personalized_suggestions = fetch_personalized_suggestions(db, "lip", prediction_context)
-        result["personalized_suggestions"] = personalized_suggestions  # NEW: DB-based suggestions
+        result["personalized_suggestions"] = personalized_suggestions
 
         return result
         

@@ -24,6 +24,7 @@ python-jose[cryptography]
 passlib[bcrypt]
 pydantic
 psycopg2-binary
+firebase-admin
 gunicorn
 opencv-python-headless
 

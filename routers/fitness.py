@@ -39,12 +39,33 @@ def predict_fitness_video(
                  raise HTTPException(status_code=400, detail=result["error"])
              raise HTTPException(status_code=500, detail=result["error"])
         
-        result["video_url"] = f"/fitness_videos/{result['processed_video_filename']}"
+        # === STORAGE UPDATE: Upload to S3 if configured ===
+        # === STORAGE UPDATE: Upload to Firebase if configured ===
+        from core.storage import storage_manager
         
-        if "video_filename_normal" in result:
-             result["video_url_normal"] = f"/fitness_videos/{result['video_filename_normal']}"
-        if "video_filename_heatmap" in result:
-             result["video_url_heatmap"] = f"/fitness_videos/{result['video_filename_heatmap']}"
+        # Upload Normal Video
+        firebase_normal_url = storage_manager.upload_file(
+            result["video_path_normal"],
+            remote_folder="fitness_videos",
+            local_url_prefix="/fitness_videos",
+            content_type="video/mp4"
+        )
+        
+        # Upload Heatmap Video
+        firebase_heatmap_url = storage_manager.upload_file(
+           result["video_path_heatmap"],
+           remote_folder="fitness_videos",
+           local_url_prefix="/fitness_videos",
+           content_type="video/mp4"
+        )
+
+        # Update Result Object (Used by Frontend)
+        if firebase_normal_url:
+             result["video_url"] = firebase_normal_url
+             result["video_url_normal"] = firebase_normal_url
+             
+        if firebase_heatmap_url:
+             result["video_url_heatmap"] = firebase_heatmap_url
         
         return result
         
