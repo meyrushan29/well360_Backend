@@ -16,7 +16,7 @@ scikit-image
 mediapipe==0.10.13
 captum
 google-auth
-xgboost
+xgboost==1.7.6
 joblib
 tqdm
 matplotlib
