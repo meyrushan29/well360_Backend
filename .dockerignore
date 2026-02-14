@@ -1,0 +1,26 @@
+__pycache__
+*.pyc
+*.pyo
+venv
+.venv
+.git
+.github
+.idea
+.vscode
+env/
+# Tests and Docs
+tests/
+docs/
+scripts/
+logs/
+hydration_ml.log
+temp/
+
+# Large Datasets and Media
+Mental-H/Emotional/AudioModel/DataSet/
+Mental-H/Emotional/Dataset/
+Mental-H/Emotional/savedEmoVideos/
+img/uploads/*
+
+# Development Specific
+*.md

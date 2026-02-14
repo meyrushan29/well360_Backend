@@ -1,0 +1,56 @@
+{
+  "base_phrases": {
+    "happy": [
+      "Keep smiling and enjoy your day with positivity and energy, cherish every moment of happiness.",
+      "Maintain your positive mindset, celebrate small victories, and share joy with everyone around.",
+      "Spread happiness to others, focus on the bright side, and stay grateful for all good things.",
+      "Embrace the cheerful moments, engage in activities that bring joy, and maintain a healthy outlook.",
+      "Please listen to this song: https://youtu.be/PhxfspwMdww?si=BuNvP7PXgtpoMEcF"
+    ],
+    "sad": [
+      "Take a short break, breathe deeply, and reflect on things that make you feel better emotionally.",
+      "Talk to someone you trust, write down your thoughts, and engage in gentle calming activities regularly.",
+      "Allow yourself to rest, process your emotions, and do something small to improve your mood today.",
+      "Listen to calming music, go for a short walk, and practice mindfulness to release negative energy.",
+      "Focus on self-care, acknowledge your feelings, and take one small positive action to lift your spirits.",
+      "Listen to this motivational album : https://open.spotify.com/playlist/7L4qbPDXElR0sw75vLJobW?si=9ngoU4q8S1e3UdDrc8sAwA&pi=0Sv2DeMVRpGpI"
+    ],
+    "angry": [
+      "Try slow breathing for a few minutes, step away from stress, and calm your racing thoughts.",
+      "Count to ten before reacting, do light physical activity, and focus on releasing negative tension gradually.",
+      "Pause and reflect, avoid impulsive actions, and engage in calming exercises to restore emotional balance.",
+      "Listen to soothing music, write your thoughts, and allow yourself to decompress from stressful situations.",
+      "Focus on solutions rather than problems, channel energy constructively, and take breaks to maintain composure.",
+      "Listen to the  calm-down session : https://youtu.be/SR0lAHQgY20?si=oF4NK_x1w-HUmVjQ"
+    ],
+    "fearful": [
+      "Ground yourself in reality, focus on safe surroundings, take deep breaths, and reassure yourself calmly.",
+      "Acknowledge your fear, stay present, and perform calming exercises to reduce anxiety gradually over time.",
+      "Talk to a trusted person, visualize safety, and engage in small actions that build confidence.",
+      "Focus on positive outcomes, breathe deeply, and avoid dwelling on unrealistic negative scenarios unnecessarily.",
+      "Take gradual steps to face your fear, maintain composure, and reward yourself for small successes daily."
+    ],
+    "disgusted": [
+      "Shift your attention to something neutral, take a brief walk, and engage in calming breathing exercises.",
+      "Change your environment if possible, focus on pleasant activities, and avoid dwelling on disturbing thoughts.",
+      "Observe your feelings, acknowledge discomfort, and perform an action that diverts attention to a positive task.",
+      "Focus on mental clarity, engage in light exercise, and consciously replace negative thoughts with neutral ones.",
+      "Practice mindfulness, take a break, and redirect attention to productive or enjoyable activities to reset mood."
+    ],
+    "surprised": [
+      "Take a moment to process what happened, breathe deeply, and think calmly before reacting to the surprise.",
+      "Observe the situation carefully, analyze unexpected events, and maintain composure while assessing possible outcomes.",
+      "Allow yourself time to understand unexpected events, and avoid making hasty decisions during surprising situations.",
+      "Reflect on the surprise, maintain emotional balance, and take notes to process it effectively for future action.",
+      "Stay grounded, observe your emotions, and calmly respond to unexpected developments with thoughtful consideration."
+    ],
+    "neutral": [
+      "You are stable and balanced, maintain awareness of tasks, posture, and mental clarity throughout your day.",
+      "Engage in light stretching, take short breaks, and maintain focus while preserving calm composure and mindfulness.",
+      "Continue your daily routine mindfully, stay attentive, and take minor actions to maintain balance and well-being.",
+      "Maintain focus and organization, monitor your emotional state, and make adjustments to preserve equilibrium naturally.",
+      "Pay attention to your surroundings, take short mindful pauses, and continue activities with clarity and composure.",
+      "Please listen to this Video : https://youtu.be/maNr_0zK5VQ?si=LOWex-kIzxq4LHBT"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "regression": {
+    "rmse": 0.015992488779018293,
+    "r2": 0.9931300437467019,
+    "model_type": "XGBRegressor"
+  },
+  "classification": {
+    "accuracy": 1.0,
+    "f1": 1.0,
+    "model_type": "XGBClassifier"
+  }
+}

@@ -1,0 +1,242 @@
+{
+  "pull_up": {
+    "correct": [
+      "Pull your chin above the bar with controlled movement.",
+      "Engage your back muscles fully, not just arms.",
+      "Keep a stable core throughout the movement."
+    ],
+    "wrong": [
+      "Swinging your body to gain momentum.",
+      "Not fully extending arms at the bottom.",
+      "Neglecting back engagement and only using arms."
+    ]
+  },
+  "push_up": {
+    "correct": [
+      "Keep body straight and core tight.",
+      "Lower chest slowly until just above the ground and push back up fully.",
+      "Keep elbows slightly tucked to reduce shoulder strain."
+    ],
+    "wrong": [
+      "Sagging hips or arching back excessively.",
+      "Flaring elbows out too wide.",
+      "Bouncing chest off the ground."
+    ]
+  },
+  "barbell_biceps_curl": {
+    "correct": [
+      "Keep elbows close to torso and stationary.",
+      "Lift the bar slowly and lower with control.",
+      "Fully extend arms at the bottom."
+    ],
+    "wrong": [
+      "Swinging the bar using momentum.",
+      "Moving elbows forward or backward.",
+      "Partial range of motion."
+    ]
+  },
+  "hammer_curl": {
+    "correct": [
+      "Maintain neutral grip and stationary elbows.",
+      "Lift and lower slowly with control.",
+      "Focus on contracting forearms and biceps evenly."
+    ],
+    "wrong": [
+      "Swinging elbows or body for momentum.",
+      "Rapid uncontrolled reps.",
+      "Leaning torso forward or backward."
+    ]
+  },
+  "bench_press": {
+    "correct": [
+      "Lower bar to mid-chest slowly.",
+      "Press explosively with shoulders retracted.",
+      "Keep feet planted and maintain stable back."
+    ],
+    "wrong": [
+      "Arching lower back excessively.",
+      "Bouncing the bar off chest.",
+      "Using shoulders or arms only, not chest."
+    ]
+  },
+  "incline_bench_press": {
+    "correct": [
+      "Use moderate incline (30-45°).",
+      "Lower bar to upper chest slowly.",
+      "Keep shoulders retracted and stable."
+    ],
+    "wrong": [
+      "Leaning back excessively.",
+      "Shrugging shoulders during press.",
+      "Using momentum instead of controlled lift."
+    ]
+  },
+  "lat_pulldown": {
+    "correct": [
+      "Pull bar to upper chest while leaning slightly back.",
+      "Engage lats, not just arms.",
+      "Maintain steady, controlled motion."
+    ],
+    "wrong": [
+      "Leaning too far back or swinging body.",
+      "Pulling bar with arms only.",
+      "Rapid uncontrolled movements."
+    ]
+  },
+  "tricep_dips": {
+    "correct": [
+      "Keep elbows close to body.",
+      "Lower until upper arms are parallel to floor.",
+      "Press back up slowly without locking elbows."
+    ],
+    "wrong": [
+      "Flaring elbows outward.",
+      "Dropping too low and stressing shoulders.",
+      "Using momentum instead of controlled press."
+    ]
+  },
+  "tricep_pushdown": {
+    "correct": [
+      "Keep elbows fixed at sides.",
+      "Push down fully and control return.",
+      "Avoid using torso or shoulders for momentum."
+    ],
+    "wrong": [
+      "Elbows moving forward/backward.",
+      "Rapid uncontrolled reps.",
+      "Swinging or leaning torso excessively."
+    ]
+  },
+  "shoulder_press": {
+    "correct": [
+      "Press weights overhead without locking elbows.",
+      "Keep core tight and avoid arching back.",
+      "Control both upward and downward movement."
+    ],
+    "wrong": [
+      "Arching lower back.",
+      "Locking elbows at top.",
+      "Using momentum from legs or torso."
+    ]
+  },
+  "squat": {
+    "correct": [
+      "Keep chest up and knees tracking over toes.",
+      "Lower hips below parallel and push through heels.",
+      "Engage core and glutes throughout."
+    ],
+    "wrong": [
+      "Knees collapsing inward.",
+      "Rounding or leaning forward excessively.",
+      "Rising onto toes instead of heels."
+    ]
+  },
+  "deadlift": {
+    "correct": [
+      "Maintain neutral spine and engage lats.",
+      "Lift with legs and hips, not back.",
+      "Lower bar slowly with control."
+    ],
+    "wrong": [
+      "Rounding lower back.",
+      "Using back to lift instead of legs.",
+      "Jerking the bar up."
+    ]
+  },
+  "romanian_deadlift": {
+    "correct": [
+      "Hinge at hips keeping back flat.",
+      "Lower bar to mid-shin with hamstring stretch.",
+      "Return with controlled motion."
+    ],
+    "wrong": [
+      "Bending knees too much.",
+      "Rounding back.",
+      "Using momentum to lift."
+    ]
+  },
+  "hip_thrust": {
+    "correct": [
+      "Drive through heels and squeeze glutes at top.",
+      "Keep feet planted and torso stable.",
+      "Avoid hyperextending lower back."
+    ],
+    "wrong": [
+      "Pushing with lower back instead of glutes.",
+      "Feet slipping or raising heels.",
+      "Hyperextending hips at top."
+    ]
+  },
+  "leg_extension": {
+    "correct": [
+      "Control movement, avoid locking knees.",
+      "Slow contraction at top of lift.",
+      "Keep focus on quadriceps."
+    ],
+    "wrong": [
+      "Swinging legs or using momentum.",
+      "Locking knees fully at top.",
+      "Rushing repetitions."
+    ]
+  },
+  "leg_raises": {
+    "correct": [
+      "Keep lower back pressed to floor.",
+      "Raise legs slowly with control.",
+      "Engage core throughout."
+    ],
+    "wrong": [
+      "Arching lower back off floor.",
+      "Swinging legs.",
+      "Rushing reps."
+    ]
+  },
+  "lateral_raise": {
+    "correct": [
+      "Keep arms slightly bent and raise to shoulder height.",
+      "Control movement both up and down.",
+      "Engage shoulders, not traps excessively."
+    ],
+    "wrong": [
+      "Using momentum to lift.",
+      "Raising above shoulder height.",
+      "Swinging torso or shoulders."
+    ]
+  },
+  "t_bar_row": {
+    "correct": [
+      "Keep back straight and pull bar to lower chest.",
+      "Squeeze shoulder blades together.",
+      "Use slow and controlled reps."
+    ],
+    "wrong": [
+      "Jerking the bar up.",
+      "Rounding the back.",
+      "Pulling with arms only."
+    ]
+  },
+  "russian_twist": {
+    "correct": [
+      "Keep core tight and twist slowly.",
+      "Engage obliques and avoid momentum.",
+      "Keep feet slightly elevated to increase difficulty."
+    ],
+    "wrong": [
+      "Twisting too fast or using momentum.",
+      "Not engaging core properly.",
+      "Lifting feet too high or letting them rest on floor."
+    ]
+  },
+  "plank": {
+    "correct": [
+      "Keep body in a straight line from head to heels.",
+      "Engage core and glutes.",
+      "Avoid sagging hips or raising butt too high."
+    ],
+    "wrong": [
+      "Sagging lower back.",
+      "Raising hips too high.",
+      "Not engaging core, letting shoulders collapse."
+    ]
+  }
+}

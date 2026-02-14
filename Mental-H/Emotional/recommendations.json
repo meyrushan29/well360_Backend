@@ -1,0 +1,59 @@
+{
+  "base_phrases": {
+    "happy": [
+      "Your happiness is contagious Keep smiling, spread positivity, and enjoy every beautiful moment today.",
+      "You’re in a great mood—celebrate it! Do something you love and share your joy with someone special.",
+      "This is your moment  Stay grateful, stay positive, and let your happiness light up the day.",
+      "Embrace this cheerful energy, create wonderful memories, and enjoy life just as it is.",
+      " Feel-good music boost: https://youtu.be/PhxfspwMdww?si=BuNvP7PXgtpoMEcF"
+    ],
+
+    "sad": [
+      "It’s okay to feel this way  Take a deep breath, slow down, and be kind to yourself right now.",
+      "You’re not alone. Talk to someone you trust or write down your feelings—it really helps.",
+      "Take small steps today. Even a short walk or calming music can gently lift your mood.",
+      "Allow yourself to rest and heal. Better days are coming, one step at a time .",
+      " Comfort & motivation playlist: https://open.spotify.com/playlist/7L4qbPDXElR0sw75vLJobW"
+    ],
+
+    "angry": [
+      "Pause for a moment  Take slow, deep breaths and allow your mind to calm down.",
+      "Step away from what’s bothering you. A short break can bring clarity and control.",
+      "Release tension through movement—stretch, walk, or shake it off gently.",
+      "Channel your energy wisely. Focus on solutions, not the problem.",
+      " Calm-down session: https://youtu.be/SR0lAHQgY20?si=oF4NK_x1w-HUmVjQ"
+    ],
+
+    "fearful": [
+      "You are safe right now  Take a deep breath and ground yourself in the present moment.",
+      "Fear is temporary. Focus on your surroundings and remind yourself that you are in control.",
+      "Talk to someone you trust or take a calming pause to regain confidence.",
+      "Visualize positive outcomes and take one small brave step forward.",
+      "You are stronger than you think  Keep going."
+    ],
+
+    "disgusted": [
+      "Shift your focus  Step away from what’s bothering you and reset your thoughts.",
+      "Change your environment if possible—fresh air or movement can help quickly.",
+      "Acknowledge the feeling without judgment and redirect your attention to something positive.",
+      "Engage in a pleasant activity that brings comfort and balance.",
+      "Take a mindful pause and reset your mood calmly."
+    ],
+
+    "surprised": [
+      "Take a moment  Unexpected moments happen—pause and process calmly.",
+      "Observe the situation clearly before reacting or making decisions.",
+      "Give yourself time to understand what just happened.",
+      "Stay grounded and respond thoughtfully rather than impulsively.",
+      "Unexpected events can lead to growth—handle them with balance."
+    ],
+
+    "neutral": [
+      "You’re feeling balanced and steady  Maintain focus and continue your day mindfully.",
+      "Take short mindful breaks to preserve clarity and calm.",
+      "Stay aware of your posture, breathing, and mental focus.",
+      "Continue your routine with calm confidence and stability.",
+      " Relaxing video suggestion: https://youtu.be/maNr_0zK5VQ?si=LOWex-kIzxq4LHBT"
+    ]
+  }
+}
