@@ -168,89 +168,59 @@ def define_models():
 def load_model(class_names):
     import os
     import torch
+    import gc
     from PIL import Image
     
     # Ensure models are defined
     define_models()
     """
     Load the trained MobileNetV2 model for lip hydration prediction.
-    Supports SimpleLipModel, ImprovedLipModel (3-layer), and ExpertLipModel (4-layer).
-    Automatically detects the correct architecture from checkpoint.
     """
+    print(f"DEBUG: Starting Load from {MOBILENET_MODEL_OUT}")
     if not os.path.exists(MOBILENET_MODEL_OUT):
-        raise FileNotFoundError(
-            f"CRITICAL: Model file not found! Expected: {MOBILENET_MODEL_OUT}\n"
-            f"Run: python hydration/training/train_lip_model_complete.py"
-        )
+        raise FileNotFoundError(f"CRITICAL: Model file not found! Expected: {MOBILENET_MODEL_OUT}")
 
     num_classes = len(class_names)
+    gc.collect() # Pre-load cleanup
 
     try:
-        try:
-            state_dict = torch.load(MOBILENET_MODEL_OUT, map_location=DEVICE, weights_only=True)
-        except TypeError:
-            state_dict = torch.load(MOBILENET_MODEL_OUT, map_location=DEVICE)
-
-        # Checkpoint may have been saved without "mobilenet." prefix
+        # Load state_dict to CPU first
+        state_dict = torch.load(MOBILENET_MODEL_OUT, map_location="cpu", weights_only=True)
+        
+        # Checkpoint prefix fix
         if state_dict and not any(k.startswith("mobilenet.") for k in state_dict.keys()):
             state_dict = {f"mobilenet.{k}": v for k, v in state_dict.items()}
 
-        # Detect architecture by checking classifier layer shapes
-        # Simple: classifier.1.weight = [num_classes, 1280]
-        # Improved (3-layer): classifier.1.weight = [512, 1280], classifier.5.weight = [256, 512], classifier.9.weight = [num_classes, 256]
-        # Expert (4-layer): classifier.1.weight = [512, 1280], classifier.5.weight = [256, 512], classifier.9.weight = [128, 256], classifier.13.weight = [num_classes, 128]
-        
-        classifier_1_key = "mobilenet.classifier.1.weight"
-        classifier_9_key = "mobilenet.classifier.9.weight"
-        classifier_13_key = "mobilenet.classifier.13.weight"
-        
-        if classifier_1_key not in state_dict:
-            classifier_1_key = "classifier.1.weight"
-            classifier_9_key = "classifier.9.weight"
-            classifier_13_key = "classifier.13.weight"
-            if classifier_1_key in state_dict:
-                state_dict = {f"mobilenet.{k}": v for k, v in state_dict.items()}
-                classifier_1_key = "mobilenet.classifier.1.weight"
-                classifier_9_key = "mobilenet.classifier.9.weight"
-                classifier_13_key = "mobilenet.classifier.13.weight"
-        
-        weight_1 = state_dict.get(classifier_1_key)
-        weight_9 = state_dict.get(classifier_9_key)
-        weight_13 = state_dict.get(classifier_13_key)
-        
-        # Detect architecture
+        # Architecture detection
+        weight_1 = state_dict.get("mobilenet.classifier.1.weight") or state_dict.get("classifier.1.weight")
+        weight_9 = state_dict.get("mobilenet.classifier.9.weight") or state_dict.get("classifier.9.weight")
+        weight_13 = state_dict.get("mobilenet.classifier.13.weight") or state_dict.get("classifier.13.weight")
+
         if weight_1 is not None and weight_1.shape[0] == num_classes and weight_1.shape[1] == 1280:
-            # Simple model: classifier.1 goes directly to num_classes
             model = SimpleLipModel(num_classes=num_classes)
-            print(f"[INFO] Detected SimpleLipModel architecture")
         elif weight_13 is not None and weight_13.shape[0] == num_classes and weight_13.shape[1] == 128:
-            # Expert model (4-layer): classifier.13 is the final layer [num_classes, 128]
             model = ExpertLipModel(num_classes=num_classes)
-            print(f"[INFO] Detected ExpertLipModel (4-layer) architecture")
         elif weight_9 is not None and weight_9.shape[0] == num_classes and weight_9.shape[1] == 256:
-            # Improved model (3-layer): classifier.9 is the final layer [num_classes, 256]
             model = ImprovedLipModel(num_classes=num_classes)
-            print(f"[INFO] Detected ImprovedLipModel (3-layer) architecture")
         else:
-            # Default to Improved if detection fails
-            print(f"[WARN] Could not detect architecture, defaulting to ImprovedLipModel")
+            print("[WARN] Unknown architecture, using ImprovedLipModel")
             model = ImprovedLipModel(num_classes=num_classes)
 
+        # Load into model
         model.load_state_dict(state_dict, strict=False)
-        missing = set(model.state_dict().keys()) - set(state_dict.keys())
-        if missing:
-            print(f"[WARN] Some weights not in checkpoint (random init): {len(missing)} keys")
-        print(f"[OK] Loaded model from: {MOBILENET_MODEL_OUT}")
+        
+        # CRITICAL: Delete state_dict and collect garbage IMMEDIATELY
+        del state_dict
+        gc.collect()
+        
+        model.to(DEVICE)
+        model.eval()
+        print(f"[OK] Model ready on {DEVICE}")
+        return model
     except Exception as e:
-        raise RuntimeError(
-            f"Failed to load model from {MOBILENET_MODEL_OUT}: {e}\n"
-            f"Retrain with: python hydration/training/train_lip_model_complete.py"
-        ) from e
-
-    model.to(DEVICE)
-    model.eval()
-    print(f"[OK] Model ready on device: {DEVICE}")
-    return model
+        import traceback
+        traceback.print_exc()
+        raise RuntimeError(f"Failed to load model: {e}")
 
 
 # ======================================================
