@@ -184,8 +184,18 @@ def load_model(class_names):
     gc.collect() # Pre-load cleanup
 
     try:
+        # Check for quantized model
+        quantized_path = MOBILENET_MODEL_OUT.replace(".pth", "_quantized.pth")
+        final_path = MOBILENET_MODEL_OUT
+        is_quantized = False
+        
+        if os.path.exists(quantized_path):
+            print(f"DEBUG: Found optimized model at {quantized_path}")
+            final_path = quantized_path
+            is_quantized = True
+            
         # Load state_dict to CPU first
-        state_dict = torch.load(MOBILENET_MODEL_OUT, map_location="cpu", weights_only=True)
+        state_dict = torch.load(final_path, map_location="cpu")
         
         # Checkpoint prefix fix
         if state_dict and not any(k.startswith("mobilenet.") for k in state_dict.keys()):
@@ -211,8 +221,12 @@ def load_model(class_names):
         elif weight_9 is not None and weight_9.shape[0] == num_classes and weight_9.shape[1] == 256:
             model = ImprovedLipModel(num_classes=num_classes)
         else:
-            print("[WARN] Unknown architecture, using ImprovedLipModel")
-            model = ImprovedLipModel(num_classes=num_classes)
+            print("[WARN] Unknown architecture, using ExpertLipModel as default")
+            model = ExpertLipModel(num_classes=num_classes)
+            
+        if is_quantized:
+             print("DEBUG: Applying dynamic quantization structure...")
+             model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
 
         # Load into model
         model.load_state_dict(state_dict, strict=False)

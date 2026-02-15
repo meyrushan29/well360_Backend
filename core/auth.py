@@ -3,8 +3,10 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
+import os
 # SECRET CONFIG
-SECRET_KEY = "super_secret_key_change_this_in_production"
+# In production, set this via environment variable
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super_secret_key_change_this_in_production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 3000  # Long expiry for demo
 

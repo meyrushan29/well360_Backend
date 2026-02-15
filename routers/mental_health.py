@@ -62,12 +62,26 @@ def _get_video_model():
         from other import EmotionCNN
         from config import DEVICE
 
+        quantized_path = os.path.join(MENTAL_H_DIR, "emotion_model_quantized.pth")
         model_path = os.path.join(MENTAL_H_DIR, "emotion_model.pth")
-        if not os.path.exists(model_path):
+        
+        # Prefer quantized
+        final_path = model_path
+        use_quantized = False
+        if os.path.exists(quantized_path):
+             final_path = quantized_path
+             use_quantized = True
+             print(f"[Mental-H] Loading optimized model: {quantized_path}")
+        elif not os.path.exists(model_path):
             raise FileNotFoundError(f"Video emotion model not found at {model_path}")
 
         model = EmotionCNN()
-        model.load_state_dict(torch.load(model_path, map_location=DEVICE))
+        
+        if use_quantized:
+             # Apply quantization structure before loading
+             model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
+             
+        model.load_state_dict(torch.load(final_path, map_location=DEVICE))
         model.to(DEVICE)
         model.eval()
 

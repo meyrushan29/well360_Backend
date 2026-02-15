@@ -95,4 +95,8 @@ app.mount("/uploads", StaticFiles(directory="img/uploads"), name="uploads")
 os.makedirs("img/fitness_processed", exist_ok=True)
 app.mount("/fitness_videos", StaticFiles(directory="img/fitness_processed"), name="fitness_videos")
 
+# Mount Flutter Web Static Build (MUST be last to not override API routes)
+if os.path.exists("static/index.html"):
+    app.mount("/", StaticFiles(directory="static", html=True), name="static")
+
 
