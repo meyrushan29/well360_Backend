@@ -261,6 +261,8 @@ def predict_lip(
         db_entry = LipAnalysis(
             user_id=current_user.id,
             image_path=firebase_url or result["saved_image_path"], 
+            xai_url=firebase_xai_url or result.get("xai_heatmap_path"),
+            xai_description=result.get("xai_description"),
             prediction=result["prediction"],
             hydration_score=result["hydration_score"],
             confidence=result["confidence"]
@@ -337,7 +339,9 @@ def get_lip_history(
         "date": e.timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "prediction": e.prediction,
         "hydration_score": e.hydration_score,
-        "image_url": f"/uploads/{os.path.basename(e.image_path)}" if e.image_path else None
+        "image_url": e.image_path if (e.image_path and e.image_path.startswith("http")) else (f"/uploads/{os.path.basename(e.image_path)}" if e.image_path else None),
+        "xai_url": e.xai_url if (e.xai_url and e.xai_url.startswith("http")) else (f"/uploads/{os.path.basename(e.xai_url)}" if e.xai_url else None),
+        "xai_description": e.xai_description
     } for e in entries]
 
 @router.get("/history/lip-trends")

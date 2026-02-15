@@ -46,6 +46,8 @@ class LipAnalysis(Base):
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     
     image_path = Column(String)
+    xai_url = Column(String, nullable=True) # Cloud URL for Heatmap
+    xai_description = Column(Text, nullable=True) # Textual AI reasoning
     prediction = Column(String)
     hydration_score = Column(Float)
     confidence = Column(Float)
