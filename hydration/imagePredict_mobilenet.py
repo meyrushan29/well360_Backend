@@ -341,77 +341,97 @@ def draw_overlay(image, score, status, warnings=[]):
 # ======================================================
 def generate_gradcam_heatmap(model, input_tensor, target_class, original_image):
     """
-    Generates a Grad-CAM heatmap overlay and a textual explanation.
-    Returns (heatmap_pil, explanation_text)
+    Manual, lightweight Grad-CAM implementation.
+    Optimized for low-RAM environments (Render Free Tier).
     """
     import numpy as np
     import cv2
+    import torch
+    import gc
     from PIL import Image
-    try:
-        from captum.attr import LayerGradCam
-    except ImportError:
-        return None, "XAI Library (Captum) not available."
+
+    activations = None
+    gradients = None
+
+    def save_activations(module, input, output):
+        nonlocal activations
+        activations = output
+
+    def save_gradients(module, grad_input, grad_output):
+        nonlocal gradients
+        gradients = grad_output[0]
 
     try:
+        # Clear any lingering gradients
+        model.zero_grad()
+        
         # Target the last conv layer of MobileNetV2
         target_layer = model.mobilenet.features[18]
         
-        lgc = LayerGradCam(model, target_layer)
-        
-        # Attribute
-        atttribution = lgc.attribute(input_tensor, target=target_class, relu_attributions=True)
-        
-        # Process heatmap
-        heatmap = atttribution.squeeze().cpu().detach().numpy()
-        heatmap = np.maximum(heatmap, 0)
-        
-        # Explain based on heatmap distribution
-        # Split into 3x3 grid to find hot zones
-        h, w = heatmap.shape
-        grid_y, grid_x = h // 3, w // 3
-        
-        regions = {
-            "top": np.mean(heatmap[0:grid_y, :]),
-            "bottom": np.mean(heatmap[2*grid_y:, :]),
-            "left": np.mean(heatmap[:, 0:grid_x]),
-            "right": np.mean(heatmap[:, 2*grid_x:]),
-            "center": np.mean(heatmap[grid_y:2*grid_y, grid_x:2*grid_x])
-        }
-        
-        # Find highest region
-        top_region = max(regions, key=regions.get)
-        
-        if regions[top_region] < 0.01:
-            explanation = "The AI looked at the overall lip texture to determine hydration."
-        else:
-            region_map = {
-                "top": "upper lip area",
-                "bottom": "lower lip area",
-                "left": "left corner of the mouth",
-                "right": "right corner of the mouth",
-                "center": "central lip region"
-            }
-            explanation = f"The AI focused primarily on the {region_map[top_region]}, identifying specific texture patterns associated with your hydration level."
+        # Register hooks
+        f_hook = target_layer.register_forward_hook(save_activations)
+        b_hook = target_layer.register_full_backward_hook(save_gradients)
 
-        # Normalize for image
-        if np.max(heatmap) > 0:
-            heatmap /= np.max(heatmap)
+        # Forward pass with gradients enabled
+        with torch.enable_grad():
+            x = input_tensor.clone().detach().requires_grad_(True)
+            output = model(x)
             
-        # Resize to match original image
+            # Ensure target_class is valid
+            if target_class >= output.shape[1]:
+                target_class = output.argmax(dim=1).item()
+                
+            score = output[0, target_class]
+            score.backward()
+
+        # Remove hooks immediately
+        f_hook.remove()
+        b_hook.remove()
+
+        if activations is None or gradients is None:
+            return None, "Reasoning visualization failed."
+
+        # Compute Grad-CAM
+        weights = torch.mean(gradients, dim=(2, 3), keepdim=True)
+        cam = torch.sum(weights * activations, dim=1).squeeze()
+        cam = torch.relu(cam)
+        
+        heatmap = cam.cpu().detach().numpy()
+        
+        # Cleanup Tensors IMMEDIATELY
+        del x, output, score, weights, cam, activations, gradients
+        gc.collect()
+
+        # Normalize 
+        if np.max(heatmap) > 0:
+            heatmap = heatmap / np.max(heatmap)
+
+        # Region explanation
+        h, w = heatmap.shape
+        gy, gx = h // 3, w // 3
+        v_top = np.mean(heatmap[0:gy, :])
+        v_bottom = np.mean(heatmap[2*gy:, :])
+        v_center = np.mean(heatmap[gy:2*gy, gx:2*gx])
+        
+        if v_top > v_bottom and v_top > v_center: region = "upper lip"
+        elif v_bottom > v_top and v_bottom > v_center: region = "lower lip"
+        else: region = "central lip area"
+        
+        explanation = f"AI focused on the {region} texture to determine hydration status."
+
+        # Resize and Color
         overlay_heatmap = cv2.resize(heatmap, (original_image.width, original_image.height))
         overlay_heatmap = np.uint8(255 * overlay_heatmap)
-        
-        # Apply colormap (JET)
         heatmap_img = cv2.applyColorMap(overlay_heatmap, cv2.COLORMAP_JET)
         heatmap_img = cv2.cvtColor(heatmap_img, cv2.COLOR_BGR2RGB)
         
-        # Overlay on original image
+        # Overlay
         original_np = np.array(original_image)
-        overlay = cv2.addWeighted(original_np, 0.6, heatmap_img, 0.4, 0)
+        overlay = cv2.addWeighted(original_np, 0.7, heatmap_img, 0.3, 0)
         
         return Image.fromarray(overlay), explanation
     except Exception as e:
-        print(f"[XAI Error] Grad-CAM failed: {e}")
+        print(f"[XAI Error] Manual Grad-CAM failed: {e}")
         return None, "Reasoning visualization unavailable."
 
 # ======================================================
@@ -567,22 +587,27 @@ def predict_image(image_path, model, class_names):
     score = calculate_hydration_score(label, confidence)
     
     # 4. Grad-CAM Visualization (XAI)
-    # CRITICAL: Disabling Heatmap generation on Render (512MB RAM) to prevent OOM crash.
-    # Prediction logic is finished; the heatmap is optional visual candy.
+    # Memory Guard: We use explicit garbage collection inside generate_gradcam_heatmap
     heatmap_pil = None
     xai_desc = "Texture and color analysis used for reasoning."
     
-    # Enhance XAI description with advanced features (Text only, no Grad-CAM RAM spike)
-    if ADVANCED_FEATURES_AVAILABLE and advanced_info:
-        xai_additions = []
-        if advanced_info.get('crack_severity', 0) > 20:
-            xai_additions.append(f"Surface texture analysis detected signs of dryness.")
-        if advanced_info.get('color_redness', 0) > 0.1:
-            xai_additions.append("Color analysis shows increased redness.")
-        if xai_additions:
-            xai_desc = " ".join(xai_additions)
-    else:
-        xai_desc = "AI analyzed lip texture and hydration patterns to determine current level."
+    try:
+        print("[INFO] Generating XAI Heatmap...")
+        heatmap_pil, xai_reasoning = generate_gradcam_heatmap(model, tensor, class_names.index(label), image_for_prediction)
+        if xai_reasoning:
+             xai_desc = xai_reasoning
+             
+        # Enhance XAI description with advanced features
+        if ADVANCED_FEATURES_AVAILABLE and advanced_info:
+            xai_additions = []
+            if advanced_info.get('crack_severity', 0) > 20:
+                xai_additions.append(f"Surface texture analysis detected signs of dryness.")
+            if advanced_info.get('color_redness', 0) > 0.1:
+                xai_additions.append("Color analysis shows increased redness.")
+            if xai_additions:
+                xai_desc = xai_desc + " " + " ".join(xai_additions)
+    except Exception as e:
+        print(f"[Warning] XAI failed: {e}")
     
     final_image = draw_overlay(image, score, status_display, warnings)
     
