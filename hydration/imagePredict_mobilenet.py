@@ -567,25 +567,22 @@ def predict_image(image_path, model, class_names):
     score = calculate_hydration_score(label, confidence)
     
     # 4. Grad-CAM Visualization (XAI)
-    # Memory Guard: XAI uses extra RAM. Only run if we have some margin.
+    # CRITICAL: Disabling Heatmap generation on Render (512MB RAM) to prevent OOM crash.
+    # Prediction logic is finished; the heatmap is optional visual candy.
     heatmap_pil = None
-    xai_desc = "Reasoning visualization skipped to save memory."
+    xai_desc = "Texture and color analysis used for reasoning."
     
-    try:
-        print("[INFO] Generating XAI Heatmap...")
-        heatmap_pil, xai_desc = generate_gradcam_heatmap(model, tensor, class_names.index(label), image_for_prediction)
-        
-        # Enhance XAI description with advanced features
-        if ADVANCED_FEATURES_AVAILABLE and advanced_info:
-            xai_additions = []
-            if advanced_info.get('crack_severity', 0) > 20:
-                xai_additions.append(f"Surface texture analysis detected signs of dryness.")
-            if advanced_info.get('color_redness', 0) > 0.1:
-                xai_additions.append("Color analysis shows increased redness.")
-            if xai_additions:
-                xai_desc = xai_desc + " " + " ".join(xai_additions)
-    except Exception as e:
-        print(f"[Warning] XAI failed: {e}")
+    # Enhance XAI description with advanced features (Text only, no Grad-CAM RAM spike)
+    if ADVANCED_FEATURES_AVAILABLE and advanced_info:
+        xai_additions = []
+        if advanced_info.get('crack_severity', 0) > 20:
+            xai_additions.append(f"Surface texture analysis detected signs of dryness.")
+        if advanced_info.get('color_redness', 0) > 0.1:
+            xai_additions.append("Color analysis shows increased redness.")
+        if xai_additions:
+            xai_desc = " ".join(xai_additions)
+    else:
+        xai_desc = "AI analyzed lip texture and hydration patterns to determine current level."
     
     final_image = draw_overlay(image, score, status_display, warnings)
     
