@@ -192,9 +192,14 @@ def load_model(class_names):
             state_dict = {f"mobilenet.{k}": v for k, v in state_dict.items()}
 
         # Architecture detection
-        weight_1 = state_dict.get("mobilenet.classifier.1.weight") or state_dict.get("classifier.1.weight")
-        weight_9 = state_dict.get("mobilenet.classifier.9.weight") or state_dict.get("classifier.9.weight")
-        weight_13 = state_dict.get("mobilenet.classifier.13.weight") or state_dict.get("classifier.13.weight")
+        weight_1 = state_dict.get("mobilenet.classifier.1.weight")
+        if weight_1 is None: weight_1 = state_dict.get("classifier.1.weight")
+        
+        weight_9 = state_dict.get("mobilenet.classifier.9.weight")
+        if weight_9 is None: weight_9 = state_dict.get("classifier.9.weight")
+        
+        weight_13 = state_dict.get("mobilenet.classifier.13.weight")
+        if weight_13 is None: weight_13 = state_dict.get("classifier.13.weight")
 
         if weight_1 is not None and weight_1.shape[0] == num_classes and weight_1.shape[1] == 1280:
             model = SimpleLipModel(num_classes=num_classes)
