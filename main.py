@@ -13,7 +13,9 @@ from routers import auth, hydration, fitness, mental_health, hydration_admin
 # APP INITIALIZATION & DB SETUP
 # =====================================================
 
-# Create Tables
+# Create Tables & Migrations
+from migrate_db import migrate
+migrate()  # Ensure columns like xai_url exist
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
