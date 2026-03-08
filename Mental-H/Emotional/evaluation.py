@@ -7,7 +7,7 @@ from preprocess import get_dataloader
 from other import EmotionCNN
 from config import DATA_DIR, DEVICE, MODEL_PATH, EMOTION_CLASSES
 
-# -------------------- TEST TRANSFORM --------------------
+# -------------------- TEST TRANSFORM  5657~--------------------
 test_transform = transforms.Compose([
     transforms.Grayscale(),
     transforms.Resize((48, 48)),
