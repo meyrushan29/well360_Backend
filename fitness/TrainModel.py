@@ -15,7 +15,9 @@ import joblib
 # ----------------- DIRS -----------------
 os.makedirs("Models", exist_ok=True)
 
-# ----------------- TRAINER -----------------
+
+
+# ----------------- TRAINER coach -----------------
 class ExerciseFormDetector:
 
     def __init__(self):
